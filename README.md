@@ -1,40 +1,30 @@
-# FixMatch
-This is an unofficial PyTorch implementation of [FixMatch: Simplifying Semi-Supervised Learning with Consistency and Confidence](https://arxiv.org/abs/2001.07685).
-The official Tensorflow implementation is [here](https://github.com/google-research/fixmatch).
-
-This code is only available in FixMatch (RandAugment).
+# WFN+CEL
+This is an official PyTorch implementation of [Semi-supervised learning advances species recognition for aquatic biodiversity monitoring](https://www.frontiersin.org/journals/marine-science/articles/10.3389/fmars.2024.1373755/full).
 
 ## Results
 
-### CIFAR10
-| #Labels | 40 | 250 | 4000 |
-|:---:|:---:|:---:|:---:|
-| Paper (RA) | 86.19 ± 3.37 | 94.93 ± 0.65 | 95.74 ± 0.05 |
-| This code | 93.60 | 95.31 | 95.77 |
-| Acc. curve | [link](https://tensorboard.dev/experiment/YcLQA52kQ1KZIgND8bGijw/) | [link](https://tensorboard.dev/experiment/GN36hbbRTDaBPy7z8alE1A/) | [link](https://tensorboard.dev/experiment/5flaQd1WQyS727hZ70ebbA/) |
-
-\* November 2020. Retested after fixing EMA issues.
-### CIFAR100
-| #Labels | 400 | 2500 | 10000 |
-|:---:|:---:|:---:|:---:|
-| Paper (RA) | 51.15 ± 1.75 | 71.71 ± 0.11 | 77.40 ± 0.12 |
-| This code | 57.50 | 72.93 | 78.12 |
-| Acc. curve | [link](https://tensorboard.dev/experiment/y4Mmz3hRTQm6rHDlyeso4Q/) | [link](https://tensorboard.dev/experiment/mY3UExn5RpOanO1Hx1vOxg/) | [link](https://tensorboard.dev/experiment/EDb13xzJTWu5leEyVf2qfQ/) |
-
-\* Training using the following options `--amp --opt_level O2 --wdecay 0.001`
+### FishNet
+| #Metrics | Common | Medium | Rare | All |
+|:---:|:---:|:---:|:---:|:---:|
+| FixMatch+[CReST](https://ieeexplore.ieee.org/document/9578169) | 68.19 | 67.26 | 24.93 | 30.24 |
+| FixMatch+[ABC](https://arxiv.org/abs/2110.10368) | 69.14 | 66.71 | 24.98 | 30.24 |
+| FixMatch+[DARP](https://arxiv.org/abs/2007.08844) | 69.74 | 67.42 | 26.19 | 31.38 |
+| FixMatch+[SAW](https://proceedings.mlr.press/v162/lai22b/lai22b.pdf) | 64.54 | 67.18 | 27.31 | 32.27 |
+| FixMatch+[DASO](https://openaccess.thecvf.com/content/CVPR2022/papers/Oh_DASO_Distribution-Aware_Semantics-Oriented_Pseudo-Label_for_Imbalanced_Semi-Supervised_Learning_CVPR_2022_paper.pdf) | 65.74 | 67.70 | 27.07 | 32.13 |
+| FixMatch+WFN+CEL | 69.58 | 68.36 | 32.61 | 37.11 |
 
 ## Usage
 
 ### Train
-Train the model by 4000 labeled data of CIFAR-10 dataset:
+Train the model by 20% labeled data of [FishNet](https://openaccess.thecvf.com/content/ICCV2023/papers/Khan_FishNet_A_Large-scale_Dataset_and_Benchmark_for_Fish_Recognition_Detection_ICCV_2023_paper.pdf) dataset:
 
 ```
-python train.py --dataset cifar10 --num-labeled 4000 --arch wideresnet --batch-size 64 --lr 0.03 --expand-labels --seed 5 --out results/cifar10@4000.5
+python train.py --ratio-labeled 0.2 --arch resnet50 --batch-size 12 --lr 0.0043 --warmup-epoch 0.05 --nesterov --use-ema --mu 4 --lambda-u 10 --T 0.4 --threshold 0.95 --seed 1024 --out results/fishnet_wfn_cel@0.2
 ```
 
 Train the model by 10000 labeled data of CIFAR-100 dataset by using DistributedDataParallel:
 ```
-python -m torch.distributed.launch --nproc_per_node 4 ./train.py --dataset cifar100 --num-labeled 10000 --arch wideresnet --batch-size 16 --lr 0.03 --wdecay 0.001 --expand-labels --seed 5 --out results/cifar100@10000
+python -m torch.distributed.launch --nproc_per_node 4 ./train.py --ratio-labeled 0.2 --arch resnet50 --batch-size 12 --lr 0.0043 --warmup-epoch 0.05 --nesterov --use-ema --mu 4 --lambda-u 10 --T 0.4 --threshold 0.95 --seed 1024 --out results/fishnet_wfn_cel@0.2
 ```
 
 ### Monitoring training progress
@@ -51,25 +41,21 @@ tensorboard --logdir=<your out_dir>
 - tqdm
 - apex (optional)
 
-## My other implementations
-- [Meta Pseudo Labels](https://github.com/kekmodel/MPL-pytorch)
-- [UDA for images](https://github.com/kekmodel/UDA-pytorch)
-
-
 ## References
 - [Official TensorFlow implementation of FixMatch](https://github.com/google-research/fixmatch)
-- [Unofficial PyTorch implementation of MixMatch](https://github.com/YU1ut/MixMatch-pytorch)
+- [Unofficial PyTorch implementation of FixMatch](https://github.com/kekmodel/FixMatch-pytorch)
 - [Unofficial PyTorch Reimplementation of RandAugment](https://github.com/ildoonet/pytorch-randaugment)
-- [PyTorch image models](https://github.com/rwightman/pytorch-image-models)
+- [PyTorch FishNet models and datasets](https://fishnet-2023.github.io/)
 
 ## Citations
 ```
-@misc{jd2020fixmatch,
-  author = {Jungdae Kim},
-  title = {PyTorch implementation of FixMatch},
-  year = {2020},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/kekmodel/FixMatch-pytorch}}
+@article{ma2024semi,
+  title={Semi-supervised learning advances species recognition for aquatic biodiversity monitoring},
+  author={Ma, Dongliang and Wei, Jine and Zhu, Likai and Zhao, Fang and Wu, Hao and Chen, Xi and Li, Ye and Liu, Min},
+  journal={Frontiers in Marine Science},
+  volume={11},
+  pages={1373755},
+  year={2024},
+  publisher={Frontiers Media SA}
 }
 ```
